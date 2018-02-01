@@ -20,10 +20,20 @@ program_start = time.time()
 
 script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
 
-#TODO update these to better path format
-with open('time_dict.p', 'r') as fp:
+rel_path = "class_objects"
+classes_dir = os.path.join(script_dir, rel_path)
+if not os.path.exists(classes_dir):
+    os.makedirs(classes_dir)
+
+
+
+rel_path = "time_dict.p"
+abs_file_path = os.path.join(script_dir, rel_path)
+with open(abs_file_path, 'rb') as fp:
     time_dict = pickle.load(fp)
-with open('day_dict.p', 'r') as fp:
+rel_path = "day_dict.p"
+abs_file_path = os.path.join(script_dir, rel_path)
+with open(abs_file_path, 'rb') as fp:
     day_dict = pickle.load(fp)
 
 schedules = [] # list of schedule objects
@@ -62,7 +72,7 @@ if linked_courses:
     if len(linked_courses[0]) != len(linked_courses[1]):
         print "Error: linked courses lists of unequal length"
         quit()
-gap_threshold = 0
+gap_threshold = 480
 no_8am = 1
 
 if linked_courses:
@@ -220,7 +230,7 @@ def main():
                     if getattr(schedule, 'has_8am') == 0:
                         print "Schedule: ", getattr(schedule, 'number')
                         print "Gap Score: ", getattr(schedule, 'gap_score')
-                        print "has 8am: ", getattr(schedule, 'has_8am')
+                        print "Has 8am: ", getattr(schedule, 'has_8am'), "\n"
                         num_fit_criteria = num_fit_criteria + 1
                 else:        
                     print "Schedule: ", getattr(schedule, 'number')
@@ -243,6 +253,7 @@ def main():
                         print getattr(course, 'day_str')
                         print getattr(course, 'classTimes')
                         print "\n"
+                    print "-------------------------------------------------------"
     print "# of Valid Schedules: ", num_valid
     print "# of schedules fitting criteria: ", num_fit_criteria
 
