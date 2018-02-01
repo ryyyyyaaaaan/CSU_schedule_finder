@@ -7,9 +7,23 @@ import cPickle as pickle
 
 
 
-#TODO add class full functionality and add time data recieved attribute to class objects
-#TODO Split up into modules
-#TODO time everything
+# script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+
+
+# This if statement here for testing purposes
+if "my_settings.py" in os.listdir(script_dir):
+    import my_settings as settings
+else:
+    import settings
+
+
+
+#TODO add 'class full' functionality and add time data recieved attribute to class objects
+#TODO put settings in seperate file
+#TODO lunch hour
+#TODO dynamic no class before... [a time]
 
 
 
@@ -18,7 +32,7 @@ import cPickle as pickle
 program_start = time.time()
 
 
-script_dir = os.path.dirname(__file__) #<-- absolute dir the script is in
+
 
 rel_path = "class_objects"
 classes_dir = os.path.join(script_dir, rel_path)
@@ -40,41 +54,36 @@ schedules = [] # list of schedule objects
 courses = []
 crn_dict = {}
 week_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+days_off_dict = {0:'Monday', 1:'Tuesday', 2:'Wednesday', 3:'Thursday', 4:'Friday'}
 
 print
 # crnInput = raw_input("Enter CRN: ")
 # crn_list = [12048	,12051	,12052	,12053	,12054	,12055	,12056	,12057	,12058	,12059	,12078	,12081	,12083	,12084	,12095	,12099	,12100	,12126	,12129	,12133	,12134	,12135	,12137	,12140	,12239	,12246	,12247	,12260	,12261	,12262	,12265	,12301	,16122	,16379	,16467	,18309	,19370	,20642	,20705	,20737	,20738	,20739	,20797	,20798	,20799	,22008	,22876	,24656	,24657	,24659]
 
-# CALC LECTURE
-list_1 = [13535, 13536, 13537, 13538, 13539, 13540, 13541, 13542, 25456, 27109]
-# CIVE LECTURE
-list_2 = [12048]
-# CIVE LAB
-list_3 = [12051, 12052, 12053, 12054, 12055, 27449]
-# CALC LAB
-list_4 =[13543, 13544, 13545, 13546, 13547, 13548, 13549, 13550, 25457, 27110]
-# PHYSICS LECTURE
-list_5 = [13386, 13387]
-# PHYSICS LAB
-list_6 = [13388, 13389, 13390, 13391, 13392, 13393, 13394, 13395, 13396, 13397, 13398, 13399, 13400, 17938, 18405, 21718, 21719, 26624, 26784, 26821]
-# GEOLOGY LECTURE
-list_7 = [16412,10621]
-# PHYSICS RECITATION
-list_8 = [13401, 13402, 13403, 13404, 13405, 13406, 13407, 13408, 23527, 25170, 26597, 26786]
-list_9 = ['NULL']
-list_10 = ['NULL']
+list_1 = settings.list_1
+list_2 = settings.list_2
+list_3 = settings.list_3
+list_4 = settings.list_4
+list_5 = settings.list_5
+list_6 = settings.list_6
+list_7 = settings.list_7
+list_8 = settings.list_8
+list_9 = settings.list_9
+list_10 = settings.list_10
 
 crn_list = list_1 + list_2 + list_3 + list_4 + list_5 + list_6 + list_7 + list_8 + list_9 + list_10
 
 #<--------Settings------->
 
-linked_courses = [list_1, list_4]
+linked_courses = settings.linked_courses
 if linked_courses:
     if len(linked_courses[0]) != len(linked_courses[1]):
         print "Error: linked courses lists of unequal length"
         quit()
-gap_threshold = 480
-no_8am = 1
+gap_threshold = settings.gap_threshold
+days_off_pref = settings.days_off_pref
+long_weekend_pref = settings.long_weekend_pref
+no_8am = settings.no_8am
 
 if linked_courses:
     linked_dict = dict(zip(linked_courses[0], linked_courses[1]))
@@ -229,13 +238,30 @@ def main():
             if getattr(schedule, 'gap_score') >= gap_threshold:
                 if no_8am == 1:
                     if getattr(schedule, 'has_8am') == 0:
+                        print "---------------------------------------------------------------------------"
+                        print "---------------------------------------------------------------------------", "\n"
                         print "Schedule: ", getattr(schedule, 'number')
                         print "Gap Score: ", getattr(schedule, 'gap_score')
-                        print "Has 8am: ", getattr(schedule, 'has_8am'), "\n"
+                        if getattr(schedule, 'days_off') is not None:
+                            print "Days off: ",
+                            for day in getattr(schedule, 'days_off'):
+                                print days_off_dict[day],
+                            print
+                        else:
+                            print "Days off: None", "\n"
                         num_fit_criteria = num_fit_criteria + 1
-                else:        
+                else:
+                    print "---------------------------------------------------------------------------"
+                    print "---------------------------------------------------------------------------", "\n"
                     print "Schedule: ", getattr(schedule, 'number')
                     print "Gap Score: ", getattr(schedule, 'gap_score')
+                    if getattr(schedule, 'days_off') is not None:
+                        print "Days off: ",
+                        for day in getattr(schedule, 'days_off'):
+                            print days_off_dict[day],
+                        print
+                    else:
+                        print "Days off: None", "\n"
                     num_fit_criteria = num_fit_criteria + 1
             num_valid = num_valid + 1
             if getattr(schedule, 'gap_score') >= gap_threshold:
@@ -254,7 +280,6 @@ def main():
                         print getattr(course, 'day_str')
                         print getattr(course, 'classTimes')
                         print "\n"
-                    print "-------------------------------------------------------"
     print "# of Valid Schedules: ", num_valid
     print "# of schedules fitting criteria: ", num_fit_criteria
 
@@ -330,6 +355,7 @@ def get_data(CRN, pause):
     print "CLASS DAYS      :",
     print day_str
 
+    time.sleep(0.2)
     course_name = driver.find_element_by_xpath("//*[@id='table1']/tbody/tr/td[6]").get_attribute("title")
     
     
@@ -365,16 +391,16 @@ class Schedule(object):
         self.Thursday = None
         self.Friday = None
         self.valid = 1
-        self.class_list = []
+        self.class_list = None
         self.gap_score = 0
         self.has_8am = 0
+        self.days_off = None
     
     def GapScore(self):
 
         current_high = 0
         count = 0
 
-        # TODO refactor this(gapscore) and get rid of print statements
         for value in self.Monday.values():
             if value == 0:
                 count = count + 1
@@ -437,11 +463,22 @@ class Schedule(object):
         if count > current_high:
             current_high = count
         self.gap_score = self.gap_score + current_high
+        if days_off_pref == 1:
+            if self.days_off is not None:
+                for day in self.days_off:
+                    self.gap_score = self.gap_score + 180
+        if long_weekend_pref == 1:
+            if self.days_off is not None:
+                for day in self.days_off:
+                    if day == 0 or day == 4:
+                        self.gap_score = self.gap_score + 180
 
             
 
 
-    def add_class(self, class_object):     #TODO refactor this(add_class)
+    def add_class(self, class_object): 
+        if self.class_list is None:
+            self.class_list = []
         self.class_list.append(class_object)
         for x in class_object.class_days:
             i = class_object.start_value
@@ -508,8 +545,11 @@ def scheduler(a_combo, its_number):
     for x in range(len(a_combo)):
         if a_combo[x] != 'NULL' and schedules[its_number].valid == 1:
             schedules[its_number].add_class(courses[crn_dict[a_combo[x]]])
-    for day in week_days:
+    for i, day in enumerate(week_days):
         if schedules[its_number].valid == 1 and getattr(schedules[its_number], day) is None:
+            if schedules[its_number].days_off is None:
+                schedules[its_number].days_off = []
+            schedules[its_number].days_off.append(i)
             setattr(schedules[its_number], day, day_dict.copy())
 
 
