@@ -49,7 +49,7 @@ list_6 = [13388, 13389, 13390, 13391, 13392, 13393, 13394, 13395, 13396, 13397, 
 # GEOLOGY LECTURE
 list_7 = [16412,10621]
 # PHYSICS RECITATION
-list_8 = ['NULL'] # [13401, 13402, 13403, 13404, 13405, 13406, 13407, 13408, 23527, 25170, 26597, 26786]
+list_8 = [13401, 13402, 13403, 13404, 13405, 13406, 13407, 13408, 23527, 25170, 26597, 26786]
 list_9 = ['NULL']
 list_10 = ['NULL']
 
@@ -347,11 +347,11 @@ def get_data(CRN, pause):
 class Schedule(object):
     def __init__(self, number):
         self.number = number
-        self.Monday = day_dict.copy()
-        self.Tuesday = day_dict.copy()
-        self.Wednesday = day_dict.copy()
-        self.Thursday = day_dict.copy()
-        self.Friday = day_dict.copy()
+        self.Monday = None
+        self.Tuesday = None
+        self.Wednesday = None
+        self.Thursday = None
+        self.Friday = None
         self.valid = 1
         self.class_list = []
         self.gap_score = 0
@@ -436,30 +436,40 @@ class Schedule(object):
             while i <= class_object.end_value:
 
                 if x == 'Monday':
+                    if self.Monday is None:
+                        self.Monday = day_dict.copy()
                     current_value = self.Monday[i]
                     if current_value == 1:
                         self.valid = 0
                         break
                     self.Monday[i] = 1
                 elif x == 'Tuesday':
+                    if self.Tuesday is None:
+                        self.Tuesday = day_dict.copy()
                     current_value = self.Tuesday[i]
                     if current_value == 1:
                         self.valid = 0
                         break
                     self.Tuesday[i] = 1
                 elif x == 'Wednesday':
+                    if self.Wednesday is None:
+                        self.Wednesday = day_dict.copy()
                     current_value = self.Wednesday[i]
                     if current_value == 1:
                         self.valid = 0
                         break
                     self.Wednesday[i] = 1
                 elif x == 'Thursday':
+                    if self.Thursday is None:
+                        self.Thursday = day_dict.copy()
                     current_value = self.Thursday[i]
                     if current_value == 1:
                         self.valid = 0
                         break
                     self.Thursday[i] = 1
                 elif x == 'Friday':
+                    if self.Friday is None:
+                        self.Friday = day_dict.copy()
                     current_value = self.Friday[i]
                     if current_value == 1:
                         self.valid = 0
