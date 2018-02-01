@@ -39,6 +39,7 @@ with open(abs_file_path, 'rb') as fp:
 schedules = [] # list of schedule objects
 courses = []
 crn_dict = {}
+week_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 
 print
 # crnInput = raw_input("Enter CRN: ")
@@ -493,6 +494,9 @@ class Schedule(object):
                 self.Wednesday = None
                 self.Thursday = None
                 self.Friday = None
+                self.has_8am = None
+                self.class_list = None
+                self.gap_score = None
                 break
 
            
@@ -504,6 +508,10 @@ def scheduler(a_combo, its_number):
     for x in range(len(a_combo)):
         if a_combo[x] != 'NULL' and schedules[its_number].valid == 1:
             schedules[its_number].add_class(courses[crn_dict[a_combo[x]]])
+    for day in week_days:
+        if schedules[its_number].valid == 1 and getattr(schedules[its_number], day) is None:
+            setattr(schedules[its_number], day, day_dict.copy())
+
 
 
 
