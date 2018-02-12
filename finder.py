@@ -3,7 +3,11 @@ from selenium.webdriver.common.keys import Keys
 import time
 import itertools
 import sys, os
+import operator
 import cPickle as pickle
+import random
+from PIL import Image, ImageDraw, ImageFont
+import textwrap
 
 
 
@@ -13,17 +17,19 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 # This if statement here for testing purposes
-if "my_settings.py" in os.listdir(script_dir):
-    import my_settings as settings
+if "my_settings_copy.py" in os.listdir(script_dir):
+    import my_settings_copy as settings
 else:
     import settings
 
 
 
 #TODO add 'class full' functionality and add time data recieved attribute to class objects
-#TODO put settings in seperate file
+#TODO debug no name problem
+#TODO GUI
 #TODO lunch hour
-#TODO dynamic no class before... [a time]
+#TODO schedule to work around
+#     ^^ make gui feature that allows user to edit base schedule (day_dict)
 
 
 
@@ -55,6 +61,7 @@ courses = []
 crn_dict = {}
 week_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
 days_off_dict = {0:'Monday', 1:'Tuesday', 2:'Wednesday', 3:'Thursday', 4:'Friday'}
+color_dict = {0:(8, 87, 214, 190), 1:(8, 87, 214, 190), 2:(173, 247, 37, 190), 3:(247, 117, 36, 190), 4:(36, 236, 247, 190), 5:(255, 76, 213, 190), 6:(252, 242, 95, 190), 7:(194, 244, 66, 190)}
 
 print
 # crnInput = raw_input("Enter CRN: ")
@@ -84,6 +91,9 @@ gap_threshold = settings.gap_threshold
 days_off_pref = settings.days_off_pref
 long_weekend_pref = settings.long_weekend_pref
 no_8am = settings.no_8am
+
+if days_off_pref != 1 and long_weekend_pref == 1:
+    days_off_pref = 1
 
 if linked_courses:
     linked_dict = dict(zip(linked_courses[0], linked_courses[1]))
@@ -128,6 +138,7 @@ def init(pause):
 def main():
     global script_dir
     global driver
+    fit_criteria = []
     crns_to_get = []
     # print "class_objects :", os.listdir('.class_objects')
     for x in crn_list:
@@ -225,6 +236,10 @@ def main():
         if getattr(schedule, 'valid') != 0:
             schedules[getattr(schedule, 'number')].GapScore()
 
+
+
+
+
     for schedule in schedules:
         if getattr(schedule, 'valid') == 1:
             for course in schedules[getattr(schedule, 'number')].class_list:
@@ -238,53 +253,104 @@ def main():
             if getattr(schedule, 'gap_score') >= gap_threshold:
                 if no_8am == 1:
                     if getattr(schedule, 'has_8am') == 0:
-                        print "---------------------------------------------------------------------------"
-                        print "---------------------------------------------------------------------------", "\n"
-                        print "Schedule: ", getattr(schedule, 'number')
-                        print "Gap Score: ", getattr(schedule, 'gap_score')
-                        if getattr(schedule, 'days_off') is not None:
-                            print "Days off: ",
-                            for day in getattr(schedule, 'days_off'):
-                                print days_off_dict[day],
-                            print
-                        else:
-                            print "Days off: None", "\n"
+                        fit_criteria.append(schedule)
                         num_fit_criteria = num_fit_criteria + 1
                 else:
-                    print "---------------------------------------------------------------------------"
-                    print "---------------------------------------------------------------------------", "\n"
-                    print "Schedule: ", getattr(schedule, 'number')
-                    print "Gap Score: ", getattr(schedule, 'gap_score')
-                    if getattr(schedule, 'days_off') is not None:
-                        print "Days off: ",
-                        for day in getattr(schedule, 'days_off'):
-                            print days_off_dict[day],
-                        print
-                    else:
-                        print "Days off: None", "\n"
+                    fit_criteria.append(schedule)
                     num_fit_criteria = num_fit_criteria + 1
             num_valid = num_valid + 1
-            if getattr(schedule, 'gap_score') >= gap_threshold:
-                if no_8am == 1:
-                    if getattr(schedule, 'has_8am') == 0:
-                        for course in schedules[getattr(schedule, 'number')].class_list:
-                            print getattr(course, 'CRN')
-                            print getattr(course, 'name')
-                            print getattr(course, 'day_str')
-                            print getattr(course, 'classTimes')
-                            print "\n"
-                else:
-                    for course in schedules[getattr(schedule, 'number')].class_list:
-                        print getattr(course, 'CRN')
-                        print getattr(course, 'name')
-                        print getattr(course, 'day_str')
-                        print getattr(course, 'classTimes')
-                        print "\n"
+
     print "# of Valid Schedules: ", num_valid
     print "# of schedules fitting criteria: ", num_fit_criteria
 
-            
-    
+    fit_criteria = sorted(fit_criteria, key=operator.attrgetter('gap_score'), reverse=True)
+    del fit_criteria[20:]
+
+    for i, schedule in enumerate(fit_criteria):
+        print "---------------------------------------------------------------------------"
+        print "---------------------------------------------------------------------------", "\n"
+        print "Schedule: ", getattr(schedule, 'number')
+        print "Gap Score: ", getattr(schedule, 'gap_score')
+        if getattr(schedule, 'days_off') is not None:
+            print "Days off: ",
+            for day in getattr(schedule, 'days_off'):
+                print days_off_dict[day],
+            print
+        else:
+            print "Days off: None", "\n"
+        for course in fit_criteria[i].class_list:
+            print getattr(course, 'CRN')
+            print getattr(course, 'name')
+            print getattr(course, 'day_str')
+            print getattr(course, 'classTimes')
+            print "\n"    
+
+    for schedule in fit_criteria:
+        visual_schedule(schedule)
+
+
+
+
+
+
+
+
+rel_path = "day_pix.p"
+abs_file_path = os.path.join(script_dir, rel_path)
+with open(abs_file_path, 'rb') as fp:
+    day_pix = pickle.load(fp)
+
+rel_path = "time_pix.p"
+abs_file_path = os.path.join(script_dir, rel_path)
+with open(abs_file_path, 'rb') as fp:
+    time_pix = pickle.load(fp)
+
+def visual_schedule(schedule):
+    base = Image.open('base_calendar.png')
+    class_boxes = Image.new('RGBA', base.size, (255,255,255,0))
+    boxes = ImageDraw.Draw(class_boxes)
+
+
+    for course in schedule.class_list:
+        for day in course.class_days:
+            x1 = day_pix[day][0]
+            y1 = time_pix[course.start_value]
+            x2 = day_pix[day][1]
+            y2 = time_pix[course.end_value]
+            tup1 = (x1, y1)
+            tup2 = (x2, y2)
+            boxes.rectangle([tup1, tup2], fill=course.color)
+
+    # get a font
+    fnt = ImageFont.truetype('Ubuntu-R.ttf', 12)
+    # draw text, full opacity
+    for course in schedule.class_list:
+        for day in course.class_days:
+            x1 = day_pix[day][0]
+            y1 = time_pix[course.start_value]
+            for i, line in enumerate(textwrap.wrap(course.name, width=30)):
+                if len(textwrap.wrap(course.name, width=30)) > 2 and i == 1:
+                    line = line + " " + textwrap.wrap(course.name, width=30)[2][:(27-len(line))] + "..."
+                tup1 = (x1, y1+(i*13))
+                boxes.text(tup1, line, font=fnt, fill=(0,0,0,255))
+                if i >= 1:
+                    break
+
+    out = Image.alpha_composite(base, class_boxes)
+
+    rel_path = "schedule_images"
+    images_dir = os.path.join(script_dir, rel_path)
+    if not os.path.exists(images_dir):
+        os.makedirs(images_dir)
+
+    file_name = str(schedule.number) + ".JPEG"
+    rel_path = ["schedule_images", file_name]
+    images_dir = os.path.join(script_dir, *rel_path)
+    out.save(images_dir)
+
+
+
+
 
 
 
@@ -300,6 +366,7 @@ class Course:
         self.end_time = self.times[1]
         self.start_value = time_dict[self.times[0]]
         self.end_value = time_dict[self.times[1]]
+        self.color = color_dict[random.randint(0,7)]
 
 
 # function that takes a crn and a pause value as arguments and returns a Course object
@@ -482,7 +549,7 @@ class Schedule(object):
         self.class_list.append(class_object)
         for x in class_object.class_days:
             i = class_object.start_value
-            while i <= class_object.end_value:
+            while i < class_object.end_value:
 
                 if x == 'Monday':
                     if self.Monday is None:
