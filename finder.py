@@ -356,18 +356,7 @@ def main():
 
     for schedule in schedules:
         if schedule.valid != 0:
-            try:
-                schedule.GapScore()
-            except Exception as exception:
-                print schedule.number
-                print schedule.valid
-                print schedule.Monday
-                print schedule.Tuesday
-                print schedule.Wednesday
-                print schedule.Thursday
-                print schedule.Friday
-                print schedule.class_list
-                quit()
+            schedule.GapScore()
 
 
 
